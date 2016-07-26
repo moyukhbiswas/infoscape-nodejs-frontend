@@ -1,11 +1,9 @@
 var express = require('express');
 var app = express();
 
-app.use(express.static('public'));
-
-var port = process.env.PORT || 3000;
-
-app.get('/',express.static('public'));
+app.use('/infoscape_app', express.static('public'));
+app.use(express.static('login'));
+var port = process.env.PORT || 8080;
 
 app.get('/someapicallterminal', function(req, res) {
 	console.log('API CALL HERE');

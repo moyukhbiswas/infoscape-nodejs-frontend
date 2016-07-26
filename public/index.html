@@ -22,8 +22,27 @@
 
   <!-- Latest compiled and minified JavaScript -->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  <script>
+  function getCookie(cname) {
+      var name = cname + "=";
+      var ca = document.cookie.split(';');
+      for(var i = 0; i <ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0)==' ') {
+              c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+              return c.substring(name.length,c.length);
+          }
+      }
+      return "";
+  }
+  console.log('COOKIE HERE!');
+  console.log(document.cookie);
+  window.profileusername = getCookie('name');
+  window.profileemail = getCookie('email');
+  </script>
   <script type="text/javascript" src="./assets/app.js"></script>
-
 
 
   <input id="pac-input" class="controls" type="text" placeholder="Search Box">
@@ -43,7 +62,7 @@
     <input type="radio" name="type" id="changemode-driving">
     <label for="changemode-driving">Driving</label>
   </div>
-  
+
   <div id="map-canvas"></div>
 </body>
 
