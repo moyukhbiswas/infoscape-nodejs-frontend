@@ -1,11 +1,13 @@
 var map;
+// var serverUrl = "http://10.171.45.57:8080/api"
+var serverUrl = "/api"
 function initialize() {
   var globalData = {};
   var getInfo = function()
   {
     $.ajax({
       type:"GET",
-      url: "http://10.86.113.27:8011/get_info",
+      url: serverUrl+"/get_info",
       cache: false,
       // dataType: "jsonp",
       success: function(html){
@@ -22,7 +24,7 @@ function initialize() {
   {
     $.ajax({
       type:"POST",
-      url: "http://10.86.113.27:8011/login",
+      url: serverUrl+"/login",
       data : {
         email: email,
         pwd: pwd
@@ -45,7 +47,7 @@ function initialize() {
   {
     $.ajax({
       type:"POST",
-      url: "http://10.86.113.27:8011/register",
+      url: serverUrl+"/register",
       data : {
         email: email,
         pwd: pwd,
@@ -68,7 +70,7 @@ function initialize() {
   {
     $.ajax({
       type:"POST",
-      url: "http://10.86.113.27:8011/add_vote",
+      url: serverUrl+"/add_vote",
       data : {
         iD: id,
         email: email,
@@ -91,7 +93,7 @@ function initialize() {
   {
     $.ajax({
       type:"POST",
-      url: "http://10.86.113.27:8011/add_msg",
+      url: serverUrl+"/add_msg",
       data : {
         category: cat,
         sub_cat: subCat,
@@ -134,10 +136,14 @@ function initialize() {
 
         var origin_input = document.getElementById('origin-input');
         var destination_input = document.getElementById('destination-input');
+        var radius_input = document.getElementById('radius-input');
+        console.log(radius_input);
+        // console.log(radius_input.value);
         var modes = document.getElementById('mode-selector');
 
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(origin_input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(destination_input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(radius_input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(modes);
 
         var origin_autocomplete = new google.maps.places.Autocomplete(origin_input);
@@ -230,6 +236,18 @@ function initialize() {
                 map: map,
                 title: 'Hello World!'
               });
+              // var rad = document.getElementById('radius-input')?document.getElementById('radius-input').value:0;
+              var cityCircle = new google.maps.Circle({
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#FF0000',
+                fillOpacity: 0.35,
+                map: map,
+                center: pointsArray[0],
+                radius: parseInt(document.getElementById('radius-input')?document.getElementById('radius-input').value:500)
+                // radius: 1000
+              });
 
               directionsDisplay.setDirections(response);
              
@@ -238,6 +256,10 @@ function initialize() {
               function myLoop () {           //  create a loop function
                  setTimeout(function () {    //  call a 3s setTimeout when the loop is called
                     marker.setPosition(pointsArray[i]);          //  your code here
+                    cityCircle.setCenter(pointsArray[i]);          //  your code here
+                    cityCircle.set('radius',parseInt(document.getElementById('radius-input')?document.getElementById('radius-input').value:500,10));          //  your code here
+                    // cityCircle.setRadius(1000);
+                    // console.log(document.getElementById('radius-input').value);
                     i++;                     //  increment the counter
                     if (i < pointsArray.length) {            //  if the counter < 10, call the loop function
                        myLoop();             //  ..  again which will trigger another 
@@ -245,7 +267,8 @@ function initialize() {
                  }, 100)
               }
 
-              myLoop(); 
+              myLoop();
+              // cityCircle.setMap(null);
 
               console.log("points yaa");
               console.log(pointsArray);
@@ -584,7 +607,7 @@ function initialize() {
     window.addNewPin = function(category, lat, lng, email, subcategory, message){
       $.ajax({
         type:"GET",
-        url: "http://10.86.113.27:8011/get_info",
+        url: serverUrl+"/get_info",
         cache: false,
         // dataType: "jsonp",
         success: function(html){
