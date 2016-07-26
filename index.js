@@ -9,6 +9,6 @@ app.get('/someapicallterminal', function(req, res) {
 	console.log('API CALL HERE');
 	res.end('API Only!');
 });
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+app.listen(80, function () {
+  console.log('Example app listening on port 80!');
 });
