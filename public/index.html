@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>React Webpack Template Title</title>
+  <title>Infoscape</title>
   <link rel="stylesheet" href="./mapsStyles.css">
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyA0PGl5CPAG8CtCmeJR6vVu5gMAlA1EccQ&libraries=places,drawing"></script>
   <script src="./maps.js"></script>
@@ -40,7 +40,7 @@
   console.log('COOKIE HERE!');
   console.log(document.cookie);
   window.profileusername = getCookie('name');
-  window.profileemail = getCookie('email');
+  window.profileemail = getCookie('email') || "admin";
   </script>
   <script type="text/javascript" src="./assets/app.js"></script>
 
@@ -53,7 +53,10 @@
       placeholder="Enter a destination location">
 
   <input id="radius-input" class="controls" type="text"
-      placeholder="Enter Radius (in meters)">
+      placeholder="Enter Radius (in meters)" onkeypress='return event.charCode >= 48 && event.charCode <= 57' >
+
+  <input id="number-pins-input" class="controls" type="hidden"
+      placeholder="Enter No. of pins" onkeypress='return event.charCode >= 48 && event.charCode <= 57'>
 
   <div id="mode-selector" class="controls">
     <input type="radio" name="type" id="changemode-walking" checked="checked">
@@ -64,6 +67,14 @@
 
     <input type="radio" name="type" id="changemode-driving">
     <label for="changemode-driving">Driving</label>
+  </div>
+
+  <div id="navigation-through-pins-selector" class="controls">
+    <input type="radio" name="typePath" id="changemode-default-path" checked="checked">
+    <label for="changemode-default-pins">Default Path</label>
+
+    <input type="radio" name="typePath" id="changemode-suggest-path">
+    <label for="changemode-via-pins">Suggest Through Pins</label>
   </div>
 
   <div id="map-canvas"></div>

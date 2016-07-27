@@ -1,9 +1,10 @@
+
 var express = require('express');
 var app = express();
 var mysql      = require('mysql');
 var bodyParser = require('body-parser')
 const util = require('util');
-
+var math = require('mathjs'); 
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
@@ -82,6 +83,75 @@ app.post('/api/add_vote', function (request, res) {
                 res.send("success"
 )});
 
+
+app.post('/api/get_waypoints', function (request, res) {
+                var origin_lat = parseFloat(request.body.origin_lat)
+                var origin_long = parseFloat(request.body.origin_long)
+                var dest_lat = parseFloat(request.body.dest_lat)
+                var dest_long = parseFloat(request.body.dest_long)
+                var numberOfPoints = parseInt(request.body.no_points)
+
+               //Earth’s radius, sphere
+               var R=6378137
+                
+               //offsets in meters
+               var dn = 5000
+               var de = 5000
+                var Pi = 3.14
+
+               //Coordinate offsets in radians
+               var dLat = dn/R
+               var dLon1 = de/(R*math.cos(Pi*origin_lat/180))
+               var dLon2 = de/(R*math.cos(Pi*dest_lat/180))
+
+                
+               //OffsetPosition, decimal degrees
+               origin_lat = origin_lat + dLat * 180/Pi
+               dest_lat = dest_lat + dLat * 180/Pi
+               origin_long = origin_long + dLon1 * 180/Pi 
+               dest_long = dest_long + dLon2 * 180/Pi 
+
+               max_lat = Math.max(origin_lat, dest_lat)
+               min_lat = Math.min(origin_lat, dest_lat)
+               max_long = Math.max(origin_long, dest_long)
+               min_long = Math.min(origin_long, dest_long)
+
+               console.log("New origin lat and longs " + origin_lat + " " + origin_long)
+               console.log("New destination lat and longs " + dest_lat + " " + dest_long)
+
+                var sqlQuery = util.format("select * from msgs where relevant=1 and lat<= %s and lat >=%s and longitude<=%s and longitude>=%s order by (upvotes-downvotes) desc", max_lat, min_lat, max_long, min_long)
+                console.log(sqlQuery)
+                var hash = [];
+                connection.query(sqlQuery, function(err, rows) {
+                                var count  = 0
+                                for (var i in rows) {
+                                                if (count == numberOfPoints)
+                                                                break
+                                                else
+                                                                {
+                                                                				var temp = {"lat":rows[i].lat,"long":rows[i].longitude}
+                                                                                if (containsObject(temp, hash))
+                                                                					continue
+                                                                                hash.push(temp)
+                                                                                count = count + 1
+                                                                }
+                                                
+                                }
+                console.log(hash);
+                res.send(JSON.stringify(hash))
+                });
+});
+
+function containsObject(obj, list) {
+    var i;
+    for (i = 0; i < list.length; i++) {
+        if (list[i] === obj) {
+            return true;
+        }
+    }
+
+    return false;
+}
 // app.listen(3001, '0.0.0.0');
 
 

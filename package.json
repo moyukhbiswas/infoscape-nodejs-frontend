@@ -13,9 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.14.0",
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
+    "mathjs": "^3.3.0",
     "mysql": "^2.11.1",
     "node-mysql": "^0.4.2",
     "util": "^0.10.3"

@@ -41,6 +41,8 @@ function initialize() {
     });
   }
 
+  
+
 
 
  var userRegister = function(name,email,pwd)
@@ -126,10 +128,10 @@ function initialize() {
     map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 
   var loadNavigations =  function(){
-        var origin_place_id = null;
-        var destination_place_id = null;
+        var origin_place = null;
+        var destination_place = null;
         var travel_mode = google.maps.TravelMode.WALKING;
-
+        var path_mode = "defaultPath";
         var directionsService = new google.maps.DirectionsService;
         var directionsDisplay = new google.maps.DirectionsRenderer;
         directionsDisplay.setMap(map);
@@ -137,14 +139,16 @@ function initialize() {
         var origin_input = document.getElementById('origin-input');
         var destination_input = document.getElementById('destination-input');
         var radius_input = document.getElementById('radius-input');
-        console.log(radius_input);
-        // console.log(radius_input.value);
+        var number_pins_input = document.getElementById('number-pins-input');
         var modes = document.getElementById('mode-selector');
+        var navigationPathModes = document.getElementById('navigation-through-pins-selector');
 
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(origin_input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(destination_input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(radius_input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(modes);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(navigationPathModes);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(number_pins_input);
 
         var origin_autocomplete = new google.maps.places.Autocomplete(origin_input);
         origin_autocomplete.bindTo('bounds', map);
@@ -154,15 +158,33 @@ function initialize() {
 
         // Sets a listener on a radio button to change the filter type on Places
         // Autocomplete.
-        function setupClickListener(id, mode) {
+        function setupClickListenerForNavigationType(id, mode) {
           var radioButton = document.getElementById(id);
           radioButton.addEventListener('click', function() {
             travel_mode = mode;
           });
         }
-        setupClickListener('changemode-walking', google.maps.TravelMode.WALKING);
-        setupClickListener('changemode-transit', google.maps.TravelMode.TRANSIT);
-        setupClickListener('changemode-driving', google.maps.TravelMode.DRIVING);
+        setupClickListenerForNavigationType('changemode-walking', google.maps.TravelMode.WALKING);
+        setupClickListenerForNavigationType('changemode-transit', google.maps.TravelMode.TRANSIT);
+        setupClickListenerForNavigationType('changemode-driving', google.maps.TravelMode.DRIVING);
+
+
+        function setupClickListenerForPathType(id, mode) {
+          var radioButton = document.getElementById(id);
+          radioButton.addEventListener('click', function() {
+            path_mode = mode;
+            var inputBox = document.getElementById('number-pins-input');
+            if (path_mode === "suggestPath") {
+              inputBox.type = 'text';
+            }
+            else {
+              inputBox.type = 'hidden';
+            }
+          });
+        }
+
+        setupClickListenerForPathType('changemode-default-path', 'defaultPath');
+        setupClickListenerForPathType('changemode-suggest-path', 'suggestPath');
 
         function expandViewportToFitPlace(map, place) {
           if (place.geometry.viewport) {
@@ -183,9 +205,11 @@ function initialize() {
 
           // If the place has a geometry, store its place ID and route if we have
           // the other place ID
-          origin_place_id = place.place_id;
-          route(origin_place_id, destination_place_id, travel_mode,
-                directionsService, directionsDisplay);
+          // console.log(place);
+          // console.log(place.geometry.location.toString());
+          // console.log(place.geometry.location.lat());
+          origin_place = place;
+          getWaypointsAndMakeRouteCall(origin_place, destination_place, travel_mode, directionsService, directionsDisplay);
         });
 
         destination_autocomplete.addListener('place_changed', function() {
@@ -198,20 +222,72 @@ function initialize() {
 
           // If the place has a geometry, store its place ID and route if we have
           // the other place ID
-          destination_place_id = place.place_id;
-          route(origin_place_id, destination_place_id, travel_mode,
-                directionsService, directionsDisplay);
+
+          destination_place = place;
+          getWaypointsAndMakeRouteCall(origin_place, destination_place, travel_mode, directionsService, directionsDisplay);
         });
 
-        function route(origin_place_id, destination_place_id, travel_mode,
-                       directionsService, directionsDisplay) {
-          if (!origin_place_id || !destination_place_id) {
+        function getWaypointsAndMakeRouteCall(origin_place, destination_place, travel_mode, directionsService, directionsDisplay) {
+          if (!origin_place || !origin_place.place_id || !destination_place || !destination_place.place_id) {
             return;
           }
-          var counter = 0;
+          var numberPins = 5;
+          if (path_mode === "suggestPath") {
+            // make backend api call to get api
+            var inputBox = document.getElementById('number-pins-input');
+            if(inputBox != null && inputBox.value != null && !isNaN(inputBox.value)) {
+              numberPins = parseInt(inputBox.value);
+            }
+
+            getWaypoints(origin_place, destination_place, travel_mode, directionsService, directionsDisplay, numberPins)
+          }
+          else {
+            getRoute(origin_place.place_id, destination_place.place_id, travel_mode, directionsService, directionsDisplay);
+          }
+        }
+
+        var getWaypoints = function(origin_place, destination_place, travel_mode, directionsService, directionsDisplay, numberPins = 5) {
+          $.ajax({
+            type:"POST",
+            url: serverUrl+"/get_waypoints",
+            data : {
+              origin_lat: origin_place.geometry.location.lat(),
+              origin_long: origin_place.geometry.location.lng(),
+              dest_lat: destination_place.geometry.location.lat(),
+              dest_long: destination_place.geometry.location.lng(),
+              no_points : numberPins
+            },
+            success: function(data){
+              // got waypoints, store them in an array
+              // call - getRoute(origin_place_id, destination_place_id, travel_mode, directionsService, directionsDisplay, waypts)
+              // console.log("Success - Login");
+              waypointsLatLng = JSON.parse(data);
+              console.log(waypointsLatLng);
+              var waypointsArr = [];
+              for (waypoint in waypointsLatLng) {
+                waypointsArr.push({
+                    location: new google.maps.LatLng(parseFloat(waypointsLatLng[waypoint]["lat"]),parseFloat(waypointsLatLng[waypoint]["long"])),
+                    stopover: false
+                })
+                console.log(parseFloat(waypointsLatLng[waypoint]["lat"]),parseFloat(waypointsLatLng[waypoint]["long"]));
+              }
+              getRoute(origin_place.place_id, destination_place.place_id, travel_mode, directionsService, directionsDisplay, waypointsArr);
+              console.log(waypointsArr);
+            },
+            error: function(err){
+              // console.log("Error - Login ");
+              // console.log(err);
+            }
+          
+          });
+        }
+
+        function getRoute(origin_place_id, destination_place_id, travel_mode, directionsService, directionsDisplay, waypts = []) {
           directionsService.route({
             origin: {'placeId': origin_place_id},
             destination: {'placeId': destination_place_id},
+            waypoints: waypts,
+            optimizeWaypoints  : true,
             travelMode: travel_mode
           }, function(response, status) {
             if (status === google.maps.DirectionsStatus.OK) {
@@ -223,10 +299,7 @@ function initialize() {
                     console.log(leg);
                       for (var step in response.routes[route].legs[leg].steps) {
                           for (var latlng in response.routes[route].legs[leg].steps[step].path) {
-                              // if(counter%20==0)
                                 pointsArray.push(response.routes[route].legs[leg].steps[step].path[latlng]);
-                              counter++;
-                              console.log(counter);
                           }
                       }
                   }
